@@ -118,17 +118,10 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // VIDEO FRAME'i canvas'a çiz
+            // VIDEO FRAME
             ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
             if (!results.poseLandmarks) return;
-
-            // Skeleton çiz
-            drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
-                { color: "#00FF00", lineWidth: 3 });
-
-            drawLandmarks(ctx, results.poseLandmarks,
-                { color: "#FF0000", lineWidth: 2 });
 
             const landmarks = results.poseLandmarks;
 
@@ -140,7 +133,9 @@
             const angle = calculateAngle(hip, knee, ankle);
             angleText.innerText = Math.round(angle) + "°";
 
-            /* REP LOGIC */
+            /* ==============================
+               REP LOGIC
+            ============================== */
 
             if (angle < 90) {
                 squatStage = "DOWN";
@@ -153,7 +148,9 @@
 
             repsText.innerText = repCount;
 
-            /* QUALITY ANALYSIS */
+            /* ==============================
+               QUALITY ANALYSIS
+            ============================== */
 
             let quality = "Good Form";
             let error = false;
@@ -186,7 +183,9 @@
             resultText.innerText = quality;
             resultText.style.color = error ? "red" : "lime";
 
-            /* SCORE SYSTEM */
+            /* ==============================
+               SCORE SYSTEM
+            ============================== */
 
             const idealAngle = 90;
             const depthDiff = Math.abs(angle - idealAngle);
@@ -214,6 +213,58 @@
             } else {
                 progressBar.style.background = "#00ff99";
             }
+
+            /* ==============================
+               CUSTOM SKELETON DRAW
+            ============================== */
+
+            const skeletonColor = error ? "red" : "lime";
+            ctx.strokeStyle = skeletonColor;
+            ctx.fillStyle = skeletonColor;
+            ctx.lineWidth = 4;
+
+            function drawLine(a, b) {
+                const x1 = a.x * canvas.width;
+                const y1 = a.y * canvas.height;
+                const x2 = b.x * canvas.width;
+                const y2 = b.y * canvas.height;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+
+            function drawPoint(p) {
+                const x = p.x * canvas.width;
+                const y = p.y * canvas.height;
+
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            // LEFT SIDE
+            drawLine(shoulder, hip);
+            drawLine(hip, knee);
+            drawLine(knee, ankle);
+
+            // RIGHT SIDE
+            drawLine(landmarks[12], landmarks[24]);
+            drawLine(landmarks[24], landmarks[26]);
+            drawLine(landmarks[26], landmarks[28]);
+
+            // SHOULDERS & HIPS
+            drawLine(landmarks[11], landmarks[12]);
+            drawLine(landmarks[23], landmarks[24]);
+
+            // POINTS
+            [
+                shoulder, hip, knee, ankle,
+                landmarks[12], landmarks[24],
+                landmarks[26], landmarks[28]
+            ].forEach(drawPoint);
+
         });
 
 
