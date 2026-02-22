@@ -89,3 +89,6 @@ video, canvas {
     transition: width 0.3s ease, background 0.3s ease;
     border-radius: 10px;
 }
+#video {
+    display: none;
+}
