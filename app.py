@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, jsonify
+from mediapipe.python.solutions import pose as mp_pose
+from mediapipe.python.solutions import drawing_utils as mp_drawing
 import base64
 import cv2
 import numpy as np
