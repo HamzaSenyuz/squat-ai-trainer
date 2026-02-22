@@ -1,15 +1,18 @@
 from flask import Flask, render_template, request, jsonify
-from mediapipe.python.solutions import pose as mp_pose
-from mediapipe.python.solutions import drawing_utils as mp_drawing
 import base64
 import cv2
 import numpy as np
-import mediapipe as mp
 import math
+
+import mediapipe as mp
+from mediapipe import solutions
+
+
 
 app = Flask(__name__)
 
 mp_pose = mp.solutions.pose
+mp_drawing = solutions.drawing_utils
 pose = mp_pose.Pose(
     static_image_mode=False,
     model_complexity=0,
