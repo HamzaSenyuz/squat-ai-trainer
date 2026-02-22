@@ -47,3 +47,26 @@ Clone the repository:
 ```bash
 git clone https://github.com/yourusername/squat-ai-trainer.git
 cd squat-ai-trainer
+
+Create virtual environment:
+python -m venv venv
+
+Activate:
+Windows:
+venv\Scripts\activate
+Mac/Linux:
+source venv/bin/activate
+
+Install dependencies:
+pip install -r requirements.txt
+
+Run the application:
+python app.py
+
+Open in browser:
+http://127.0.0.1:5000
+
+👨‍💻 Author:
+
+Hamza Şenyüz
+Computer Engineering Student
