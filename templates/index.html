@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Squat AI Trainer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>🏋️ Squat AI Trainer</h1>
+
+        <div class="app-card">
+
+            <div class="video-section">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas"></canvas>
+            </div>
+
+            <div class="stats-section">
+
+                <div id="result" class="status">Ready</div>
+
+                <div class="stat-box">
+                    <span>Knee Angle</span>
+                    <h2 id="angle">0°</h2>
+                </div>
+
+                <div class="stat-box">
+                    <span>Reps</span>
+                    <h2 id="reps">0</h2>
+                </div>
+
+                <div class="stat-box">
+                    <span>Form Score</span>
+
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+
+                    <h2 id="score">0%</h2>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+
+    <script>
+        // ==============================
+        // GLOBAL VARIABLES
+        // ==============================
+
+        let processing = false;
+
+        const tempCanvas = document.createElement("canvas");
+        const tempCtx = tempCanvas.getContext("2d");
+
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const resultText = document.getElementById("result");
+        const repsText = document.getElementById("reps");
+        const scoreText = document.getElementById("score");
+        const angleText = document.getElementById("angle");
+        const progressBar = document.getElementById("progress-bar");
+
+        // ==============================
+        // CAMERA
+        // ==============================
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+
+                video.addEventListener("loadeddata", () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                });
+
+            } catch (err) {
+                console.log("Camera error:", err);
+            }
+        }
+
+        // ==============================
+        // DRAW LANDMARKS
+        // ==============================
+
+        function drawLandmarks(landmarks, error) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!landmarks || landmarks.length === 0) return;
+
+            ctx.strokeStyle = error ? "red" : "lime";
+            ctx.lineWidth = 3;
+            ctx.fillStyle = error ? "red" : "lime";
+
+            function drawLine(a, b) {
+                if (!landmarks[a] || !landmarks[b]) return;
+
+                const x1 = landmarks[a][0] * canvas.width;
+                const y1 = landmarks[a][1] * canvas.height;
+                const x2 = landmarks[b][0] * canvas.width;
+                const y2 = landmarks[b][1] * canvas.height;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+
+            function drawPoint(i) {
+                if (!landmarks[i]) return;
+
+                const x = landmarks[i][0] * canvas.width;
+                const y = landmarks[i][1] * canvas.height;
+
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            // Legs & torso
+            drawLine(11, 23);
+            drawLine(23, 25);
+            drawLine(25, 27);
+
+            drawLine(12, 24);
+            drawLine(24, 26);
+            drawLine(26, 28);
+
+            drawLine(11, 12);
+            drawLine(23, 24);
+
+            for (let i = 11; i <= 28; i++) {
+                drawPoint(i);
+            }
+        }
+
+        // ==============================
+        // SEND FRAME
+        // ==============================
+
+        async function sendFrame() {
+            if (processing || !video.videoWidth) return;
+            processing = true;
+
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+
+            tempCtx.drawImage(video, 0, 0);
+            const imageData = tempCanvas.toDataURL("image/jpeg", 0.5);
+
+            try {
+                const response = await fetch("/analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ image: imageData })
+                });
+
+                const result = await response.json();
+
+                // ==============================
+                // UI UPDATE
+                // ==============================
+
+                resultText.innerText = result.quality || "Tracking...";
+                resultText.style.color = result.error ? "red" : "lime";
+
+                repsText.innerText = result.reps || 0;
+                angleText.innerText = (result.angle || 0) + "°";
+
+                const scoreValue = result.score || 0;
+                scoreText.innerText = scoreValue + "%";
+                progressBar.style.width = scoreValue + "%";
+
+                if (scoreValue < 50) {
+                    progressBar.style.background = "#ff4d4d";
+                } else if (scoreValue < 75) {
+                    progressBar.style.background = "#ffd633";
+                } else {
+                    progressBar.style.background = "#00ff99";
+                }
+
+                // ==============================
+                // DRAW SKELETON
+                // ==============================
+
+                drawLandmarks(result.landmarks, result.error);
+
+            } catch (err) {
+                console.log("Analyze error:", err);
+            }
+
+            processing = false;
+        }
+
+        // ==============================
+        // START
+        // ==============================
+
+        startCamera();
+        setInterval(sendFrame, 120);
+    </script>
+</body>
+
+</html>

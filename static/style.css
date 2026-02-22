@@ -1,0 +1,88 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #141e30, #243b55);
+    color: white;
+}
+
+.container {
+    text-align: center;
+    width: 100%;
+}
+
+.app-card {
+    display: flex;
+    gap: 40px;
+    padding: 30px;
+    border-radius: 20px;
+
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.video-section {
+    position: relative;
+}
+
+video, canvas {
+    border-radius: 15px;
+}
+
+#canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.stats-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.status {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.stat-box {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.stat-box:hover {
+    transform: scale(1.05);
+}
+
+.stat-box span {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.stat-box h2 {
+    font-size: 36px;
+    margin: 5px 0 0 0;
+}
+
+.progress-container {
+    width: 100%;
+    height: 12px;
+    background: #2c2c2c;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: red;
+    transition: width 0.3s ease, background 0.3s ease;
+    border-radius: 10px;
+}
