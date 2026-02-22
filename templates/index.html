@@ -64,6 +64,11 @@
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
 
+        video.onloadedmetadata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+        };
+
         const resultText = document.getElementById("result");
         const repsText = document.getElementById("reps");
         const scoreText = document.getElementById("score");
