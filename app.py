@@ -6,14 +6,13 @@ import math
 import os
 
 import mediapipe as mp
-from mediapipe import solutions
+
 
 
 
 app = Flask(__name__)
 
 mp_pose = mp.solutions.pose
-mp_drawing = solutions.drawing_utils
 pose = mp_pose.Pose(
     static_image_mode=False,
     model_complexity=0,
