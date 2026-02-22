@@ -17,6 +17,7 @@
             <div class="video-section">
                 <video id="video" autoplay playsinline></video>
                 <canvas id="canvas"></canvas>
+                <canvas id="canvas" width="640" height="480"></canvas>
             </div>
 
             <div class="stats-section">
@@ -108,13 +109,17 @@
            ON RESULTS (AI LOGIC HERE)
         ============================== */
 
+
         pose.onResults((results) => {
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // VIDEO FRAME'i canvas'a çiz
+            ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
             if (!results.poseLandmarks) return;
 
-            // Draw skeleton
+            // Skeleton çiz
             drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS,
                 { color: "#00FF00", lineWidth: 3 });
 
@@ -131,10 +136,7 @@
             const angle = calculateAngle(hip, knee, ankle);
             angleText.innerText = Math.round(angle) + "°";
 
-
-            /* ==============================
-               REP LOGIC
-            ============================== */
+            /* REP LOGIC */
 
             if (angle < 90) {
                 squatStage = "DOWN";
@@ -147,10 +149,7 @@
 
             repsText.innerText = repCount;
 
-
-            /* ==============================
-               QUALITY ANALYSIS
-            ============================== */
+            /* QUALITY ANALYSIS */
 
             let quality = "Good Form";
             let error = false;
@@ -170,7 +169,6 @@
                 error = true;
             }
 
-            // Torso lean
             const dx = shoulder.x - hip.x;
             const dy = shoulder.y - hip.y;
             const torsoAngle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
@@ -184,10 +182,7 @@
             resultText.innerText = quality;
             resultText.style.color = error ? "red" : "lime";
 
-
-            /* ==============================
-               SCORE SYSTEM
-            ============================== */
+            /* SCORE SYSTEM */
 
             const idealAngle = 90;
             const depthDiff = Math.abs(angle - idealAngle);
@@ -215,26 +210,27 @@
             } else {
                 progressBar.style.background = "#00ff99";
             }
-
         });
 
 
-        /* ==============================
-           CAMERA START
-        ============================== */
 
-        const camera = new Camera(video, {
-            onFrame: async () => {
-                await pose.send({ image: video });
-            },
-            width: 640,
-            height: 480
-        });
 
-        camera.start();
+            /* ==============================
+               CAMERA START
+            ============================== */
+
+            const camera = new Camera(video, {
+                onFrame: async () => {
+                    await pose.send({ image: video });
+                },
+                width: 640,
+                height: 480
+            });
+
+            camera.start();
 
     </script>
-    
+
 </body>
 
 </html>
