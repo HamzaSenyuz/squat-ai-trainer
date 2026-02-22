@@ -25,10 +25,13 @@ body {
 
 .video-section {
     position: relative;
+    width: 640px;
 }
 
 video, canvas {
     border-radius: 15px;
+    width: 100%;
+    height: auto;
 }
 
 #canvas {

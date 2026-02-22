@@ -17,7 +17,6 @@
             <div class="video-section">
                 <video id="video" autoplay playsinline></video>
                 <canvas id="canvas"></canvas>
-                <canvas id="canvas" width="640" height="480"></canvas>
             </div>
 
             <div class="stats-section">
@@ -215,19 +214,24 @@
 
 
 
-            /* ==============================
-               CAMERA START
-            ============================== */
+        /* ==============================
+           CAMERA START
+        ============================== */
 
-            const camera = new Camera(video, {
-                onFrame: async () => {
-                    await pose.send({ image: video });
-                },
-                width: 640,
-                height: 480
-            });
+        video.onloadedmetadata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+        };
 
-            camera.start();
+        const camera = new Camera(video, {
+            onFrame: async () => {
+                await pose.send({ image: video });
+            },
+            width: 640,
+            height: 480
+        });
+
+        camera.start();
 
     </script>
 
