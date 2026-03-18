@@ -1,296 +1,1271 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="tr">
 <head>
-    <title>Squat AI Trainer</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <meta charset="UTF-8">
+    <title>AI Form Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --green:      #00ff88;
+            --green-mid:  #00c86a;
+            --green-glow: rgba(0, 255, 136, 0.15);
+            --red:        #ff3b3b;
+            --amber:      #ffb800;
+            --bg:         #060a08;
+            --bg2:        #0c1410;
+            --bg3:        #121e17;
+            --border:     rgba(0, 255, 136, 0.1);
+            --border-hi:  rgba(0, 255, 136, 0.3);
+            --text:       #dff2e8;
+            --text-dim:   #4a7060;
+            --font-d: 'Bebas Neue', sans-serif;
+            --font-m: 'DM Mono', monospace;
+            --font-b: 'Inter', sans-serif;
+        }
+
+        html, body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-b);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,255,136,0.022) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,136,0.022) 1px, transparent 1px);
+            background-size: 44px 44px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: -200px; left: -200px;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(0,255,136,0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 24px 48px;
+        }
+
+        /* ── HEADER ── */
+        header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo { display: flex; align-items: flex-end; gap: 14px; }
+
+        .logo-icon {
+            width: 48px; height: 48px;
+            border: 1.5px solid var(--green);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 0 18px var(--green-glow), inset 0 0 12px var(--green-glow);
+        }
+
+        .logo-text h1 {
+            font-family: var(--font-d);
+            font-size: 36px;
+            letter-spacing: 3px;
+            color: var(--green);
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(0,255,136,0.4);
+        }
+
+        .logo-text p {
+            font-family: var(--font-m);
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-family: var(--font-m);
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+        }
+
+        .pulse-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.4; transform: scale(0.75); }
+        }
+
+        /* ── EXERCISE SELECTOR ── */
+        .ex-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .ex-btn {
+            flex: 1;
+            padding: 14px 8px 12px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-dim);
+            font-family: var(--font-d);
+            font-size: 20px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ex-btn .ex-icon { font-size: 20px; }
+        .ex-btn .ex-sub {
+            font-family: var(--font-m);
+            font-size: 9px;
+            letter-spacing: 1.5px;
+            opacity: 0.5;
+            font-weight: 400;
+        }
+
+        .ex-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--green);
+            transform: scaleX(0);
+            transition: transform 0.25s ease;
+        }
+
+        .ex-btn:hover {
+            border-color: var(--border-hi);
+            color: var(--text);
+            background: var(--bg3);
+        }
+
+        .ex-btn.active {
+            background: var(--bg3);
+            border-color: var(--green);
+            color: var(--green);
+            box-shadow: 0 0 22px var(--green-glow), inset 0 0 18px var(--green-glow);
+        }
+
+        .ex-btn.active::after { transform: scaleX(1); }
+
+        /* ── MAIN GRID ── */
+        .main-card {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 18px;
+            align-items: start;
+        }
+
+        /* ── VIDEO ── */
+        .video-wrap {
+            position: relative;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .video-wrap::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 2;
+            border-radius: 12px;
+        }
+
+        .corner { position: absolute; width: 18px; height: 18px; z-index: 3; }
+        .corner.tl { top: 12px; left: 12px;  border-top: 1.5px solid var(--green); border-left: 1.5px solid var(--green); }
+        .corner.tr { top: 12px; right: 12px; border-top: 1.5px solid var(--green); border-right: 1.5px solid var(--green); }
+        .corner.bl { bottom: 12px; left: 12px;  border-bottom: 1.5px solid var(--green); border-left: 1.5px solid var(--green); }
+        .corner.br { bottom: 12px; right: 12px; border-bottom: 1.5px solid var(--green); border-right: 1.5px solid var(--green); }
+
+        .video-tag {
+            position: absolute;
+            top: 14px; left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-m);
+            font-size: 9px;
+            letter-spacing: 3px;
+            color: var(--green);
+            opacity: 0.5;
+            z-index: 3;
+            text-transform: uppercase;
+        }
+
+        @keyframes scan {
+            0%   { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        .scanline {
+            position: absolute;
+            left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, rgba(0,255,136,0.25) 50%, transparent 100%);
+            z-index: 4;
+            animation: scan 4s linear infinite;
+            pointer-events: none;
+        }
+
+        video { display: none; width: 100%; }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+        }
+
+        /* ── STATS PANEL ── */
+        .stats-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .status-badge {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+            flex-shrink: 0;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .status-dot.err { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+        #result {
+            font-family: var(--font-m);
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            color: var(--green);
+            transition: color 0.3s;
+            text-transform: uppercase;
+        }
+
+        #result.err { color: var(--red); }
+
+        .stat-box {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 18px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 2px; height: 100%;
+            background: var(--green);
+            opacity: 0.5;
+        }
+
+        .stat-label {
+            font-family: var(--font-m);
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-family: var(--font-d);
+            font-size: 52px;
+            letter-spacing: 2px;
+            color: var(--green);
+            line-height: 1;
+            text-shadow: 0 0 24px rgba(0,255,136,0.25);
+        }
+
+        .score-box {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 18px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 2px; height: 100%;
+            background: var(--green);
+            opacity: 0.5;
+        }
+
+        .score-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 10px;
+        }
+
+        #score {
+            font-family: var(--font-d);
+            font-size: 28px;
+            letter-spacing: 1px;
+            color: var(--green);
+            transition: color 0.3s;
+            text-shadow: 0 0 16px rgba(0,255,136,0.25);
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 5px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--green);
+            border-radius: 3px;
+            transition: width 0.35s ease, background 0.3s;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .mini-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .mini-box {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 12px 14px;
+            text-align: center;
+        }
+
+        .mini-label {
+            font-family: var(--font-m);
+            font-size: 9px;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .mini-val {
+            font-family: var(--font-d);
+            font-size: 20px;
+            color: var(--text);
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 800px) {
+            .main-card { grid-template-columns: 1fr; }
+        }
+
+        /* ── MIRROR TOGGLE ── */
+        #canvas.mirrored { transform: scaleX(-1); }
+
+        /* ── GOAL BAR ── */
+        .goal-box {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 18px;
+            position: relative;
+            overflow: hidden;
+        }
+        .goal-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 2px; height: 100%;
+            background: var(--amber);
+            opacity: 0.6;
+        }
+        .goal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .goal-track {
+            width: 100%;
+            height: 5px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        #goal-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--amber);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+            box-shadow: 0 0 8px var(--amber);
+        }
+        .goal-input-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .goal-input-row input {
+            flex: 1;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: var(--font-m);
+            font-size: 12px;
+            padding: 6px 10px;
+            outline: none;
+            width: 60px;
+        }
+        .goal-input-row input:focus { border-color: var(--amber); }
+        .goal-set-btn {
+            background: rgba(255,184,0,0.1);
+            border: 1px solid var(--amber);
+            border-radius: 6px;
+            color: var(--amber);
+            font-family: var(--font-m);
+            font-size: 10px;
+            letter-spacing: 1px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .goal-set-btn:hover { background: rgba(255,184,0,0.2); }
+
+        /* ── FORM GUIDE ── */
+        .guide-panel {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-top: 18px;
+        }
+        .guide-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .guide-title {
+            font-family: var(--font-d);
+            font-size: 16px;
+            letter-spacing: 2px;
+            color: var(--green);
+        }
+        .guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .guide-tip {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .guide-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            margin-top: 6px;
+            flex-shrink: 0;
+            box-shadow: 0 0 6px var(--green);
+        }
+        .guide-tip-text {
+            font-family: var(--font-b);
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+        .guide-tip-text strong {
+            color: var(--text);
+            font-weight: 500;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        /* ── SESSION SUMMARY ── */
+        .summary-panel {
+            background: var(--bg2);
+            border: 1px solid var(--green);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-top: 18px;
+            display: none;
+            box-shadow: 0 0 24px var(--green-glow);
+        }
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .summary-title {
+            font-family: var(--font-d);
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: var(--green);
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .summary-stat {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+        .summary-stat .s-label {
+            font-family: var(--font-m);
+            font-size: 9px;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .summary-stat .s-val {
+            font-family: var(--font-d);
+            font-size: 28px;
+            color: var(--green);
+            letter-spacing: 1px;
+        }
+        .summary-close {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-dim);
+            font-family: var(--font-m);
+            font-size: 10px;
+            letter-spacing: 1px;
+            padding: 6px 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .summary-close:hover { border-color: var(--green); color: var(--green); }
+        @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+        .summary-panel.show { display: block; animation: fadeIn 0.3s ease; }
+    </style>
 </head>
-
 <body>
+<div class="wrapper">
 
-    <div class="container">
-        <h1>🏋️ Squat AI Trainer</h1>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">🏋️</div>
+            <div class="logo-text">
+                <h1>AI FORM ANALYZER</h1>
+                <p>Real-time pose analysis</p>
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;">
+            <button id="voice-btn" onclick="toggleVoice()" title="Toggle voice feedback" style="
+                background: var(--bg2);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                color: var(--text-dim);
+                font-family: var(--font-m);
+                font-size: 10px;
+                letter-spacing: 2px;
+                padding: 8px 14px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.2s;
+            ">
+                <span id="voice-icon">🔇</span>
+                <span id="voice-label">VOICE OFF</span>
+            </button>
+            <div class="live-badge">
+                <div class="pulse-dot"></div>
+                LIVE
+            </div>
+        </div>
+    </header>
 
-        <div class="app-card">
+    <div class="ex-selector">
+        <button class="ex-btn active" onclick="selectExercise('squat', this)">
+            <span class="ex-icon">🦵</span>
+            SQUAT
+            <span class="ex-sub">KNEE ANGLE</span>
+        </button>
+        <button class="ex-btn" onclick="selectExercise('pushup', this)">
+            <span class="ex-icon">💪</span>
+            PUSH-UP
+            <span class="ex-sub">ELBOW ANGLE</span>
+        </button>
+        <button class="ex-btn" onclick="selectExercise('plank', this)">
+            <span class="ex-icon">🧘</span>
+            PLANK
+            <span class="ex-sub">HOLD TIMER</span>
+        </button>
+        <button class="ex-btn" onclick="selectExercise('lunge', this)">
+            <span class="ex-icon">🏃</span>
+            LUNGE
+            <span class="ex-sub">KNEE ANGLE</span>
+        </button>
+        <button class="ex-btn" onclick="selectExercise('situp', this)">
+            <span class="ex-icon">🔄</span>
+            SIT-UP
+            <span class="ex-sub">TORSO ANGLE</span>
+        </button>
+    </div>
 
-            <div class="video-section">
-                <video id="video" autoplay playsinline></video>
-                <canvas id="canvas"></canvas>
+    <div class="main-card">
+
+        <div class="video-wrap">
+            <div class="corner tl"></div>
+            <div class="corner tr"></div>
+            <div class="corner bl"></div>
+            <div class="corner br"></div>
+            <div class="scanline"></div>
+            <div class="video-tag">CAMERA FEED</div>
+            <button onclick="toggleMirror()" id="mirror-btn" style="
+                position:absolute; bottom:12px; right:12px; z-index:5;
+                background:rgba(0,0,0,0.5); border:1px solid var(--border-hi);
+                border-radius:6px; color:var(--green); font-family:var(--font-m);
+                font-size:9px; letter-spacing:1.5px; padding:6px 10px; cursor:pointer;
+                transition:all 0.2s; backdrop-filter:blur(4px);
+            ">⟺ MIRROR</button>
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="stats-panel">
+
+            <div class="status-badge">
+                <div class="status-dot" id="status-dot"></div>
+                <span id="result">READY</span>
             </div>
 
-            <div class="stats-section">
-
-                <div id="result" class="status">Ready</div>
-
-                <div class="stat-box">
-                    <span>Knee Angle</span>
-                    <h2 id="angle">0°</h2>
-                </div>
-
-                <div class="stat-box">
-                    <span>Reps</span>
-                    <h2 id="reps">0</h2>
-                </div>
-
-                <div class="stat-box">
-                    <span>Form Score</span>
-
-                    <div class="progress-container">
-                        <div class="progress-bar" id="progress-bar"></div>
-                    </div>
-
-                    <h2 id="score">0%</h2>
-                </div>
-
+            <div class="stat-box">
+                <div class="stat-label" id="stat-label-angle">KNEE ANGLE</div>
+                <div class="stat-value" id="angle">—</div>
             </div>
+
+            <div class="stat-box">
+                <div class="stat-label" id="stat-label-counter">REPS</div>
+                <div class="stat-value" id="reps">0</div>
+            </div>
+
+            <div class="score-box">
+                <div class="score-head">
+                    <div class="stat-label">FORM SCORE</div>
+                    <div id="score">0%</div>
+                </div>
+                <div class="progress-track">
+                    <div id="progress-bar"></div>
+                </div>
+            </div>
+
+            <div class="mini-row">
+                <div class="mini-box">
+                    <div class="mini-label">Best</div>
+                    <div class="mini-val" id="best-score">—</div>
+                </div>
+                <div class="mini-box">
+                    <div class="mini-label">Mode</div>
+                    <div class="mini-val" id="ex-name">SQT</div>
+                </div>
+            </div>
+
+            <!-- GOAL BOX -->
+            <div class="goal-box">
+                <div class="goal-head">
+                    <div class="stat-label" style="margin:0;">GOAL</div>
+                    <span id="goal-progress-text" style="font-family:var(--font-m);font-size:10px;color:var(--amber);">—</span>
+                </div>
+                <div class="goal-track"><div id="goal-bar"></div></div>
+                <div class="goal-input-row">
+                    <input type="number" id="goal-input" placeholder="20" min="1" max="999">
+                    <button class="goal-set-btn" onclick="setGoal()">SET</button>
+                </div>
+            </div>
+
+            <!-- SESSION SUMMARY BUTTON -->
+            <button onclick="showSummary()" style="
+                width:100%; padding:12px;
+                background: rgba(0,255,136,0.06);
+                border: 1px solid var(--border-hi);
+                border-radius:8px; color:var(--text-dim);
+                font-family:var(--font-m); font-size:10px;
+                letter-spacing:2px; cursor:pointer; transition:all 0.2s;
+            " onmouseover="this.style.color='var(--green)';this.style.borderColor='var(--green)'"
+               onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='var(--border-hi)'">
+                ◈ SESSION SUMMARY
+            </button>
 
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <!-- FORM GUIDE -->
+    <div class="guide-panel">
+        <div class="guide-header">
+            <span style="font-size:16px;">📋</span>
+            <span class="guide-title">FORM GUIDE</span>
+            <span id="guide-ex-name" style="font-family:var(--font-m);font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-left:auto;">SQUAT</span>
+        </div>
+        <div class="guide-grid" id="guide-tips"></div>
+    </div>
 
-    <script>
-        /* ==============================
-           GLOBAL VARIABLES
-        ============================== */
+    <!-- SESSION SUMMARY -->
+    <div class="summary-panel" id="summary-panel">
+        <div class="summary-header">
+            <span class="summary-title">◈ SESSION SUMMARY</span>
+            <button class="summary-close" onclick="closeSummary()">CLOSE</button>
+        </div>
+        <div class="summary-grid">
+            <div class="summary-stat">
+                <div class="s-label">Exercise</div>
+                <div class="s-val" id="sum-ex">—</div>
+            </div>
+            <div class="summary-stat">
+                <div class="s-label">Total Reps</div>
+                <div class="s-val" id="sum-reps">—</div>
+            </div>
+            <div class="summary-stat">
+                <div class="s-label">Avg. Score</div>
+                <div class="s-val" id="sum-avg">—</div>
+            </div>
+            <div class="summary-stat">
+                <div class="s-label">Best Score</div>
+                <div class="s-val" id="sum-best">—</div>
+            </div>
+        </div>
+        <div id="sum-errors" style="font-family:var(--font-m);font-size:11px;color:var(--text-dim);letter-spacing:1px;margin-top:4px;"></div>
+    </div>
 
-        let repCount = 0;
-        let squatStage = "UP";
+</div>
 
-        const video = document.getElementById("video");
-        const canvas = document.getElementById("canvas");
-        const ctx = canvas.getContext("2d");
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
-        video.onloadedmetadata = () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-        };
+<script>
+    let currentExercise = "squat";
+    let repCount = 0, stage = "UP";
+    let plankActive = false, plankStart = null;
+    let bestScore = null;
+    let scoreHistory = [];
+    let errorLog = {};
+    let goalTarget = null;
+    let mirrorOn = false;
 
-        const resultText = document.getElementById("result");
-        const repsText = document.getElementById("reps");
-        const scoreText = document.getElementById("score");
-        const angleText = document.getElementById("angle");
-        const progressBar = document.getElementById("progress-bar");
+    // Form guide content
+    const GUIDE_TIPS = {
+        squat: [
+            { title: "Knee alignment", tip: "Knees should not pass over toes — keep them tracked over feet." },
+            { title: "Depth", tip: "Thighs parallel to the floor (90°) is the ideal squat depth." },
+            { title: "Torso", tip: "Keep back straight, chest up — avoid excessive forward lean." },
+            { title: "Feet", tip: "Heels flat on the floor, feet shoulder-width apart." },
+        ],
+        pushup: [
+            { title: "Body line", tip: "Head, hips and heels must form one straight line." },
+            { title: "Elbow angle", tip: "Lower until elbows reach 90° for a full rep." },
+            { title: "Elbow position", tip: "Keep elbows close to the body — don't flare them out." },
+            { title: "Hips", tip: "Hips neither too high nor too low — keep them neutral." },
+        ],
+        plank: [
+            { title: "Body alignment", tip: "Straight line from shoulder to heel — no sagging hips." },
+            { title: "Head position", tip: "Neutral neck, don't look at the floor — keep it straight." },
+            { title: "Elbow placement", tip: "Elbows directly under the shoulders." },
+            { title: "Breathing", tip: "Breathe steadily — don't hold your breath." },
+        ],
+        lunge: [
+            { title: "Front knee", tip: "Front knee should stay above the ankle — don't let it cave inward." },
+            { title: "Depth", tip: "Lower until front thigh is parallel to the floor (90° knee angle)." },
+            { title: "Torso", tip: "Keep torso upright — don't lean forward excessively." },
+            { title: "Back knee", tip: "Back knee lowers toward the floor without touching it." },
+        ],
+        situp: [
+            { title: "Range of motion", tip: "Lift torso until it's vertical, then lower slowly — full range counts." },
+            { title: "Neck", tip: "Don't pull your neck with your hands — keep it relaxed." },
+            { title: "Feet", tip: "Keep feet flat and stable on the floor throughout." },
+            { title: "Core", tip: "Engage your core — don't use momentum to swing up." },
+        ],
+    };
 
+    const video       = document.getElementById("video");
+    const canvas      = document.getElementById("canvas");
+    const ctx         = canvas.getContext("2d");
+    const resultEl    = document.getElementById("result");
+    const statusDot   = document.getElementById("status-dot");
+    const repsEl      = document.getElementById("reps");
+    const scoreEl     = document.getElementById("score");
+    const angleEl     = document.getElementById("angle");
+    const progressBar = document.getElementById("progress-bar");
+    const bestEl      = document.getElementById("best-score");
+    const exNameEl    = document.getElementById("ex-name");
 
-        /* ==============================
-           ANGLE CALCULATION
-        ============================== */
+    video.onloadedmetadata = () => {
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+    };
 
-        function calculateAngle(a, b, c) {
-            const radians =
-                Math.atan2(c.y - b.y, c.x - b.x) -
-                Math.atan2(a.y - b.y, a.x - b.x);
+    const EX_META = {
+        squat:  { angle: "KNEE ANGLE",   counter: "REPS",      short: "SQT" },
+        pushup: { angle: "ELBOW ANGLE",  counter: "REPS",      short: "PSH" },
+        plank:  { angle: "BODY ALIGN",   counter: "TIME (S)",  short: "PLK" },
+        lunge:  { angle: "KNEE ANGLE",   counter: "REPS",      short: "LNG" },
+        situp:  { angle: "TORSO ANGLE",  counter: "REPS",      short: "SIT" },
+    };
 
-            let angle = Math.abs(radians * 180.0 / Math.PI);
-            if (angle > 180) angle = 360 - angle;
+    function selectExercise(name, btn) {
+        currentExercise = name;
+        repCount = 0; stage = "UP";
+        plankActive = false; plankStart = null; bestScore = null;
+        scoreHistory = []; errorLog = {};
+        goalTarget = null;
+        document.getElementById("goal-bar").style.width = "0%";
+        document.getElementById("goal-progress-text").textContent = "—";
+        document.getElementById("goal-input").value = "";
 
-            return angle;
+        repsEl.textContent  = "0";
+        angleEl.textContent = "—";
+        scoreEl.textContent = "0%";
+        progressBar.style.width = "0%";
+        bestEl.textContent  = "—";
+        resultEl.textContent = "READY";
+        resultEl.classList.remove("err");
+        statusDot.classList.remove("err");
+
+        document.querySelectorAll(".ex-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        const m = EX_META[name];
+        document.getElementById("stat-label-angle").textContent   = m.angle;
+        document.getElementById("stat-label-counter").textContent = m.counter;
+        exNameEl.textContent = m.short;
+
+        updateGuide(name);
+    }
+
+    function updateGuide(name) {
+        const tips = GUIDE_TIPS[name] || [];
+        document.getElementById("guide-ex-name").textContent = name.toUpperCase();
+        document.getElementById("guide-tips").innerHTML = tips.map(t => `
+            <div class="guide-tip">
+                <div class="guide-dot"></div>
+                <div class="guide-tip-text"><strong>${t.title}</strong>${t.tip}</div>
+            </div>
+        `).join("");
+    }
+
+    // Show squat guide on startup
+    updateGuide("squat");
+
+    function calcAngle(a, b, c) {
+        const r = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+        let d = Math.abs(r * 180 / Math.PI);
+        return d > 180 ? 360 - d : d;
+    }
+
+    const pose = new Pose({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}` });
+    pose.setOptions({ modelComplexity: 0, smoothLandmarks: true, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7 });
+
+    pose.onResults(results => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+        if (!results.poseLandmarks) return;
+        const lm = results.poseLandmarks;
+        if (currentExercise === "squat")  analyzeSquat(lm);
+        if (currentExercise === "pushup") analyzePushup(lm);
+        if (currentExercise === "plank")  analyzePlank(lm);
+        if (currentExercise === "lunge")  analyzeLunge(lm);
+        if (currentExercise === "situp")  analyzeSitup(lm);
+    });
+
+    function analyzeSquat(lm) {
+        const angle = calcAngle(lm[23], lm[25], lm[27]);
+        angleEl.textContent = Math.round(angle) + "°";
+
+        if (angle < 90) stage = "DOWN";
+        if (angle > 160 && stage === "DOWN") { stage = "UP"; repCount++; speakRep(repCount); }
+        repsEl.textContent = repCount;
+
+        let q = "GOOD FORM", err = false;
+        if (angle > 100 && angle < 140) { q = "HALF SQUAT";       err = true; }
+        if (angle <= 80)                { q = "TOO DEEP";          err = true; }
+        if (lm[25].x > lm[27].x)       { q = "KNEE TOO FORWARD";  err = true; }
+        const lean = Math.abs(90 - Math.abs(Math.atan2(lm[11].y - lm[23].y, lm[11].x - lm[23].x) * 180 / Math.PI));
+        if (lean > 30)                  { q = "FORWARD LEAN";      err = true; }
+
+        setFeedback(q, err);
+        speakFeedback(q, err);
+        const ds = Math.max(0, 100 - Math.abs(angle - 90) * 2);
+        const ks = lm[25].x <= lm[27].x ? 100 : 50;
+        const ts = Math.max(0, 100 - Math.abs(lean - 15) * 3);
+        applyScore(Math.round(ds * 0.5 + ks * 0.25 + ts * 0.25));
+        skeleton(lm, err, [[11,12],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]], [11,12,23,24,25,26,27,28]);
+    }
+
+    function analyzePushup(lm) {
+        const angle = calcAngle(lm[12], lm[14], lm[16]);
+        angleEl.textContent = Math.round(angle) + "°";
+
+        if (angle < 90)  stage = "DOWN";
+        if (angle > 155 && stage === "DOWN") { stage = "UP"; repCount++; speakRep(repCount); }
+        repsEl.textContent = repCount;
+
+        let q = "GOOD FORM", err = false;
+        const body = calcAngle(lm[12], lm[24], lm[28]);
+        if (body < 150) { q = "HIPS TOO HIGH"; err = true; }
+        if (body < 130) { q = "HIPS TOO LOW";  err = true; }
+        const sw = Math.abs(lm[11].x - lm[12].x);
+        if (Math.abs(lm[13].x - lm[14].x) > sw * 1.3) { q = "ELBOWS TOO WIDE"; err = true; }
+
+        setFeedback(q, err);
+        speakFeedback(q, err);
+        const es = Math.max(0, 100 - Math.abs(angle - 90) * 1.5);
+        const bs = Math.max(0, 100 - Math.abs(body - 170) * 3);
+        applyScore(Math.round(es * 0.4 + bs * 0.4 + 20));
+        skeleton(lm, err, [[11,12],[11,13],[12,14],[13,15],[14,16],[11,23],[12,24],[23,24],[23,25],[24,26],[25,27],[26,28]], [11,12,13,14,15,16,23,24]);
+    }
+
+    function analyzePlank(lm) {
+        const body = calcAngle(lm[11], lm[23], lm[27]);
+        angleEl.textContent = Math.round(body) + "°";
+
+        let q = "HOLD POSITION", err = false;
+        if (body < 150) { q = "HIPS TOO HIGH"; err = true; }
+        if (body < 130) { q = "HIPS TOO LOW";  err = true; }
+        if (Math.abs(lm[0].y - lm[11].y) > 0.12) { q = "HEAD DROPPING"; err = true; }
+
+        setFeedback(q, err);
+        speakFeedback(q, err);
+        if (!err && !plankActive) { plankActive = true; plankStart = Date.now(); speak("Hold it", true); }
+        if (err  &&  plankActive) { plankActive = false; }
+        const elapsed = plankActive ? Math.floor((Date.now() - plankStart) / 1000) : 0;
+        repsEl.textContent = plankActive ? elapsed + "s" : "0s";
+        speakPlankCue(elapsed);
+
+        const as = Math.max(0, 100 - Math.abs(body - 170) * 3);
+        const hs = Math.abs(lm[0].y - lm[11].y) <= 0.12 ? 100 : 50;
+        applyScore(Math.round(as * 0.7 + hs * 0.3));
+        skeleton(lm, err, [[11,12],[11,13],[12,14],[13,15],[14,16],[11,23],[12,24],[23,24],[23,25],[24,26],[25,27],[26,28]], [0,11,12,23,24,27,28]);
+    }
+
+    /* ── LUNGE ── */
+    function analyzeLunge(lm) {
+        // Use left leg: hip(23), knee(25), ankle(27)
+        const kneeAngle = calcAngle(lm[23], lm[25], lm[27]);
+        angleEl.textContent = Math.round(kneeAngle) + "°";
+
+        // Rep: DOWN when knee < 100°, UP when knee > 155°
+        if (kneeAngle < 100) stage = "DOWN";
+        if (kneeAngle > 155 && stage === "DOWN") { stage = "UP"; repCount++; speakRep(repCount); }
+        repsEl.textContent = repCount;
+
+        let q = "GOOD FORM", err = false;
+
+        // Knee over ankle check
+        if (lm[25].x > lm[27].x + 0.05) { q = "KNEE TOO FORWARD"; err = true; }
+
+        // Half lunge — didn't go deep enough
+        if (kneeAngle > 120 && kneeAngle < 155 && stage === "DOWN") { q = "GO DEEPER"; err = true; }
+
+        // Torso upright check
+        const torsoLean = Math.abs(90 - Math.abs(Math.atan2(lm[11].y - lm[23].y, lm[11].x - lm[23].x) * 180 / Math.PI));
+        if (torsoLean > 25) { q = "KEEP TORSO UPRIGHT"; err = true; }
+
+        setFeedback(q, err);
+        speakFeedback(q, err);
+
+        const ks = Math.max(0, 100 - Math.abs(kneeAngle - 90) * 2);
+        const ts = Math.max(0, 100 - torsoLean * 2);
+        const fw = lm[25].x <= lm[27].x + 0.05 ? 100 : 50;
+        applyScore(Math.round(ks * 0.5 + ts * 0.3 + fw * 0.2));
+
+        skeleton(lm, err, [
+            [11,12],[11,23],[12,24],[23,24],
+            [23,25],[25,27],[24,26],[26,28]
+        ], [11,12,23,24,25,26,27,28]);
+    }
+
+    /* ── SIT-UP ── */
+    function analyzeSitup(lm) {
+        // Torso angle: shoulder(11) - hip(23) - knee(25)
+        const torsoAngle = calcAngle(lm[11], lm[23], lm[25]);
+        angleEl.textContent = Math.round(torsoAngle) + "°";
+
+        // DOWN = lying flat (torso angle > 150°), UP = sitting up (torso angle < 70°)
+        if (torsoAngle > 140) stage = "DOWN";
+        if (torsoAngle < 70 && stage === "DOWN") { stage = "UP"; repCount++; speakRep(repCount); }
+        repsEl.textContent = repCount;
+
+        let q = "GOOD FORM", err = false;
+
+        // Incomplete rep — not going all the way up
+        if (torsoAngle > 90 && torsoAngle < 140 && stage === "DOWN") { q = "COME UP HIGHER"; err = true; }
+
+        // Neck strain: nose should stay roughly in line with torso
+        const neckStrain = Math.abs(lm[0].x - lm[11].x);
+        if (neckStrain > 0.15) { q = "DON'T PULL NECK"; err = true; }
+
+        setFeedback(q, err);
+        speakFeedback(q, err);
+
+        const rs = Math.max(0, 100 - Math.abs(torsoAngle - 60) * 1.5);
+        const ns = neckStrain <= 0.15 ? 100 : 50;
+        applyScore(Math.round(rs * 0.7 + ns * 0.3));
+
+        skeleton(lm, err, [
+            [11,12],[11,23],[12,24],[23,24],
+            [23,25],[25,27],[24,26],[26,28],
+            [0,11],[0,12]
+        ], [0,11,12,23,24,25,26]);
+    }
+
+    function setFeedback(text, error) {
+        resultEl.textContent = text;
+        resultEl.classList.toggle("err", error);
+        statusDot.classList.toggle("err", error);
+        if (error) errorLog[text] = (errorLog[text] || 0) + 1;
+    }
+
+    function applyScore(s) {
+        scoreEl.textContent = s + "%";
+        progressBar.style.width = s + "%";
+        const c = s < 50 ? "#ff3b3b" : s < 75 ? "#ffb800" : "#00ff88";
+        progressBar.style.background = c;
+        scoreEl.style.color = c;
+        if (bestScore === null || s > bestScore) { bestScore = s; bestEl.textContent = s + "%"; }
+        scoreHistory.push(s);
+        updateGoalBar();
+    }
+
+    function skeleton(lm, error, lines, dots) {
+        const color = error ? "#ff3b3b" : "#00ff88";
+        ctx.strokeStyle = color;
+        ctx.fillStyle   = color;
+        ctx.lineWidth   = 3;
+        ctx.shadowColor = color;
+        ctx.shadowBlur  = 10;
+
+        lines.forEach(([a, b]) => {
+            ctx.beginPath();
+            ctx.moveTo(lm[a].x * canvas.width, lm[a].y * canvas.height);
+            ctx.lineTo(lm[b].x * canvas.width, lm[b].y * canvas.height);
+            ctx.stroke();
+        });
+
+        ctx.shadowBlur = 14;
+        dots.forEach(i => {
+            ctx.beginPath();
+            ctx.arc(lm[i].x * canvas.width, lm[i].y * canvas.height, 5, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.shadowBlur = 0;
+    }
+
+    video.onloadedmetadata = () => {
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+    };
+
+    /* ── SPEECH ENGINE ── */
+    let voiceOn       = false;
+    let lastSpoken    = "";
+    let lastSpokenAt  = 0;
+    let lastRepSpoken = -1;
+    let lastPlankCue  = 0;
+
+    const synth = window.speechSynthesis;
+
+    function speak(text, priority = false) {
+        if (!voiceOn || !synth) return;
+        const now = Date.now();
+        // Spam önleme: aynı mesaj 3 saniye içinde tekrar söylenmesin
+        if (!priority && text === lastSpoken && now - lastSpokenAt < 3000) return;
+        synth.cancel();
+        const utt = new SpeechSynthesisUtterance(text);
+        utt.lang  = "en-US";
+        utt.rate  = 1.05;
+        utt.pitch = 1.0;
+        utt.volume = 1.0;
+        synth.speak(utt);
+        lastSpoken   = text;
+        lastSpokenAt = now;
+    }
+
+    function toggleVoice() {
+        voiceOn = !voiceOn;
+        const btn   = document.getElementById("voice-btn");
+        const icon  = document.getElementById("voice-icon");
+        const label = document.getElementById("voice-label");
+        if (voiceOn) {
+            icon.textContent  = "🔊";
+            label.textContent = "VOICE ON";
+            btn.style.borderColor = "var(--green)";
+            btn.style.color       = "var(--green)";
+            speak("Voice feedback enabled", true);
+        } else {
+            icon.textContent  = "🔇";
+            label.textContent = "VOICE OFF";
+            btn.style.borderColor = "var(--border)";
+            btn.style.color       = "var(--text-dim)";
+            synth.cancel();
         }
+    }
 
+    // Rep tamamlandığında sesli say
+    function speakRep(count) {
+        if (!voiceOn || count === lastRepSpoken) return;
+        lastRepSpoken = count;
+        speak(String(count), true);
+    }
 
-        /* ==============================
-           MEDIAPIPE SETUP
-        ============================== */
+    // Form feedback sesi — hata değişince söyle
+    function speakFeedback(text, isError) {
+        if (!voiceOn) return;
+        const readable = text.toLowerCase().replace(/_/g, " ");
+        if (isError) {
+            speak(readable);
+        } else if (text === "GOOD FORM") {
+            speak("good form");
+        }
+    }
 
-        const pose = new Pose({
-            locateFile: (file) =>
-                `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-        });
+    // Plank teşvik cümleleri
+    const plankCues = ["Keep holding", "Stay strong", "You got this", "Great form"];
+    let plankCueIdx = 0;
+    function speakPlankCue(seconds) {
+        if (!voiceOn) return;
+        const now = Date.now();
+        if (seconds > 0 && seconds % 10 === 0 && now - lastPlankCue > 9000) {
+            lastPlankCue = now;
+            speak(plankCues[plankCueIdx % plankCues.length], true);
+            plankCueIdx++;
+        }
+    }
 
-        pose.setOptions({
-            modelComplexity: 0,
-            smoothLandmarks: true,
-            minDetectionConfidence: 0.7,
-            minTrackingConfidence: 0.7
-        });
+    /* ── MIRROR ── */
+    function toggleMirror() {
+        mirrorOn = !mirrorOn;
+        canvas.classList.toggle("mirrored", mirrorOn);
+        const btn = document.getElementById("mirror-btn");
+        btn.style.borderColor = mirrorOn ? "var(--green)" : "var(--border-hi)";
+        btn.style.color       = mirrorOn ? "var(--green)" : "var(--green)";
+    }
 
+    /* ── GOAL ── */
+    function setGoal() {
+        const val = parseInt(document.getElementById("goal-input").value);
+        if (!val || val < 1) return;
+        goalTarget = val;
+        updateGoalBar();
+    }
 
-        /* ==============================
-           ON RESULTS (AI LOGIC HERE)
-        ============================== */
+    function updateGoalBar() {
+        if (!goalTarget) return;
+        const current = currentExercise === "plank"
+            ? (plankActive ? Math.floor((Date.now() - plankStart) / 1000) : 0)
+            : repCount;
+        const pct = Math.min(100, Math.round((current / goalTarget) * 100));
+        document.getElementById("goal-bar").style.width = pct + "%";
+        document.getElementById("goal-progress-text").textContent = `${current} / ${goalTarget}`;
+        if (pct >= 100) {
+            document.getElementById("goal-bar").style.background = "#00ff88";
+            speak("Goal reached! Amazing!", true);
+        }
+    }
 
+    /* ── SESSION SUMMARY ── */
+    function showSummary() {
+        const avg = scoreHistory.length
+            ? Math.round(scoreHistory.reduce((a, b) => a + b, 0) / scoreHistory.length)
+            : 0;
+        const topErrors = Object.entries(errorLog)
+            .sort((a, b) => b[1] - a[1]).slice(0, 3)
+            .map(([e]) => e).join("  ·  ") || "Hata tespit edilmedi";
 
-        pose.onResults((results) => {
+        const EX_NAMES = { squat: "SQT", pushup: "PSH", plank: "PLK", lunge: "LNG", situp: "SIT" };
+        document.getElementById("sum-ex").textContent    = EX_NAMES[currentExercise];
+        document.getElementById("sum-reps").textContent  = currentExercise === "plank"
+            ? (plankActive ? Math.floor((Date.now() - plankStart) / 1000) + "s" : "0s")
+            : repCount;
+        document.getElementById("sum-avg").textContent   = avg + "%";
+        document.getElementById("sum-best").textContent  = bestScore !== null ? bestScore + "%" : "—";
+        document.getElementById("sum-errors").textContent = "TOP ERRORS: " + topErrors;
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const panel = document.getElementById("summary-panel");
+        panel.classList.add("show");
+        panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
 
-            // VIDEO FRAME
-            ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+    function closeSummary() {
+        document.getElementById("summary-panel").classList.remove("show");
+    }
 
-            if (!results.poseLandmarks) return;
-
-            const landmarks = results.poseLandmarks;
-
-            const shoulder = landmarks[11];
-            const hip = landmarks[23];
-            const knee = landmarks[25];
-            const ankle = landmarks[27];
-
-            const angle = calculateAngle(hip, knee, ankle);
-            angleText.innerText = Math.round(angle) + "°";
-
-            /* ==============================
-               REP LOGIC
-            ============================== */
-
-            if (angle < 90) {
-                squatStage = "DOWN";
-            }
-
-            if (angle > 160 && squatStage === "DOWN") {
-                squatStage = "UP";
-                repCount++;
-            }
-
-            repsText.innerText = repCount;
-
-            /* ==============================
-               QUALITY ANALYSIS
-            ============================== */
-
-            let quality = "Good Form";
-            let error = false;
-
-            if (angle > 100 && angle < 140) {
-                quality = "Half Squat";
-                error = true;
-            }
-
-            if (angle <= 80) {
-                quality = "Too Deep";
-                error = true;
-            }
-
-            if (knee.x > ankle.x) {
-                quality = "Knee Too Forward";
-                error = true;
-            }
-
-            const dx = shoulder.x - hip.x;
-            const dy = shoulder.y - hip.y;
-            const torsoAngle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
-            const forwardLean = Math.abs(90 - torsoAngle);
-
-            if (forwardLean > 30) {
-                quality = "Too Much Forward Lean";
-                error = true;
-            }
-
-            resultText.innerText = quality;
-            resultText.style.color = error ? "red" : "lime";
-
-            /* ==============================
-               SCORE SYSTEM
-            ============================== */
-
-            const idealAngle = 90;
-            const depthDiff = Math.abs(angle - idealAngle);
-            const depthScore = Math.max(0, 100 - depthDiff * 2);
-
-            const kneeScore = knee.x <= ankle.x ? 100 : 50;
-
-            const idealForward = 15;
-            const forwardDiff = Math.abs(forwardLean - idealForward);
-            const torsoScore = Math.max(0, 100 - forwardDiff * 3);
-
-            const finalScore = Math.round(
-                depthScore * 0.5 +
-                kneeScore * 0.25 +
-                torsoScore * 0.25
-            );
-
-            scoreText.innerText = finalScore + "%";
-            progressBar.style.width = finalScore + "%";
-
-            if (finalScore < 50) {
-                progressBar.style.background = "#ff4d4d";
-            } else if (finalScore < 75) {
-                progressBar.style.background = "#ffd633";
-            } else {
-                progressBar.style.background = "#00ff99";
-            }
-
-            /* ==============================
-               CUSTOM SKELETON DRAW
-            ============================== */
-
-            const skeletonColor = error ? "red" : "lime";
-            ctx.strokeStyle = skeletonColor;
-            ctx.fillStyle = skeletonColor;
-            ctx.lineWidth = 4;
-
-            function drawLine(a, b) {
-                const x1 = a.x * canvas.width;
-                const y1 = a.y * canvas.height;
-                const x2 = b.x * canvas.width;
-                const y2 = b.y * canvas.height;
-
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
-            }
-
-            function drawPoint(p) {
-                const x = p.x * canvas.width;
-                const y = p.y * canvas.height;
-
-                ctx.beginPath();
-                ctx.arc(x, y, 6, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-
-            // LEFT SIDE
-            drawLine(shoulder, hip);
-            drawLine(hip, knee);
-            drawLine(knee, ankle);
-
-            // RIGHT SIDE
-            drawLine(landmarks[12], landmarks[24]);
-            drawLine(landmarks[24], landmarks[26]);
-            drawLine(landmarks[26], landmarks[28]);
-
-            // SHOULDERS & HIPS
-            drawLine(landmarks[11], landmarks[12]);
-            drawLine(landmarks[23], landmarks[24]);
-
-            // POINTS
-            [
-                shoulder, hip, knee, ankle,
-                landmarks[12], landmarks[24],
-                landmarks[26], landmarks[28]
-            ].forEach(drawPoint);
-
-        });
-
-
-
-
-        /* ==============================
-           CAMERA START
-        ============================== */
-
-        video.onloadedmetadata = () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-        };
-
-        const camera = new Camera(video, {
-            onFrame: async () => {
-                await pose.send({ image: video });
-            },
-            width: 640,
-            height: 480
-        });
-
-        camera.start();
-
-    </script>
-
+    /* ── CAMERA ── */
+    const camera = new Camera(video, {
+        onFrame: async () => { await pose.send({ image: video }); },
+        width: 640, height: 480
+    });
+    camera.start();
+</script>
 </body>
-
 </html>
